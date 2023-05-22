@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from curses import wrapper, KEY_ENTER
 import heapq, random
 
@@ -11,7 +13,7 @@ def read_cards(cardfile):
 
 def save_cards(cards, cardfile):
     f = open(cardfile, 'w')
-    for (rank, question, answer) in cards:
+    for (rank, question, answer) in sorted(cards, reverse=True):
         print(f'{rank:d}:{question}:{answer}', file=f)
     f.close()
 
@@ -20,10 +22,12 @@ def select_card(cards):
     card = random.choices(cards, weights=map(float, ranks))
     return card[0]
 
-def replace_line(stdscr, y, x, txt):
+def replace_line(stdscr, y, x, txt, refresh=True):
     stdscr.move(y, x)
     stdscr.clrtoeol()
     stdscr.addstr(y, x, txt)
+    if refresh:
+        stdscr.refresh()
 
 def main(stdscr, args):
     
@@ -33,39 +37,52 @@ def main(stdscr, args):
     
     # Clear screen
     stdscr.clear()
-    stdscr.addstr(1, 0, args.cardfile)
-    stdscr.refresh()
+    replace_line(stdscr, 1, 0, args.cardfile)
         
-    k = 'start'
-    while k not in 'qQ':
+    while True:
 
         # select card
         card = select_card(cards)
         rank, question, answer = card
 
         # ask question
-        replace_line(stdscr, 3, 0, f'[{rank:d}] {question}')
-        replace_line(stdscr, 4, 0, '')
-        stdscr.refresh()
+        replace_line(stdscr, 3, 0, f'Q: [{rank:d}] {question}')
+        replace_line(stdscr, 5, 0, 'A: press any key to reveal answer, or [qQ] to quit')
 
         # show answer
         k = stdscr.getkey()
-        stdscr.addstr(4, 0, answer)        
-        stdscr.refresh()
+        if k in 'qQ': 
+            break
+        replace_line(stdscr, 5, 0, f'A: {answer}')        
+        replace_line(stdscr, 7, 0, '')
+        replace_line(stdscr, 7, 0, f'[ENTER]=easy [SPACE]=difficult [0-5]=RESET TO N [qQ]=QUIT')
     
         # update card
-        k = stdscr.getkey()
-        if k == ' ': 
-            drank = 1
-        elif k == '\n':
-            drank = -1
+        k = 'X'
+        while k not in ' 012345qQ\n':
+            k = stdscr.getkey()
+            if k == ' ': 
+                new_rank = min(5,rank+1)
+            elif k == '\n':
+                new_rank = max(0,rank-1)
+            elif k in '012345':
+                new_rank = int(k)
+            else:
+                new_rank = rank
 
-        new_rank = max(0, min(5,int(rank)+drank))
         cards.remove(card)
         cards.append((new_rank, question, answer))
-        
-    save_cards(cards, args.cardfile)
 
+    # ask if update
+    k = 'X'
+    while k not in 'yYnN':
+        replace_line(stdscr, 7, 0, f'Save results [yY/nN]?')
+        k = stdscr.getkey()
+        if k in 'yY': 
+            save_cards(cards, args.cardfile)
+            break
+        elif k in 'nN':
+            break
 
 if __name__ == '__main__':
     from argparse import ArgumentParser

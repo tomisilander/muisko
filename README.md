@@ -1,2 +1,5 @@
 # muisko
-A little flashcard program
+
+A little flashcard program using a Leitner system
+
+`./muisko.py cards/genre.csv`
