@@ -19,6 +19,8 @@ def save_cards(cards, cardfile):
 
 def select_card(cards):
     ranks = next(zip(*cards))
+    if sum(ranks) == 0:
+        return None
     card = random.choices(cards, weights=map(float, ranks))
     return card[0]
 
@@ -43,6 +45,13 @@ def main(stdscr, args):
 
         # select card
         card = select_card(cards)
+
+        if card is None:
+            stdscr.clear()
+            replace_line(stdscr, 1, 0, args.cardfile)
+            replace_line(stdscr, 3, 0, 'Congrats! No more cards left!')
+            break
+
         rank, question, answer = card
 
         # ask question
