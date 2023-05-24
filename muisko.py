@@ -38,6 +38,9 @@ def select(cards, selection):
 
 
 def reset(cards, sqas, reset):
+    if not reset:
+        return
+    
     r = reset.strip()
 
     if r.endswith('+'):
